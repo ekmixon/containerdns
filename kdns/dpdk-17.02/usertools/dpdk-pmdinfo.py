@@ -40,7 +40,7 @@ class Vendor:
         Parsing takes place inside __init__
         """
         self.ID = vendorStr.split()[0]
-        self.name = vendorStr.replace("%s " % self.ID, "").rstrip()
+        self.name = vendorStr.replace(f"{self.ID} ", "").rstrip()
         self.devices = {}
 
     def addDevice(self, deviceStr):
@@ -50,9 +50,7 @@ class Vendor:
         """
         s = deviceStr.strip()
         devID = s.split()[0]
-        if devID in self.devices:
-            pass
-        else:
+        if devID not in self.devices:
             self.devices[devID] = Device(deviceStr)
 
     def report(self):
@@ -66,7 +64,7 @@ class Vendor:
         try:
             return self.devices[devid]
         except:
-            return Device("%s  Unknown Device" % devid)
+            return Device(f"{devid}  Unknown Device")
 
 
 class Device:
@@ -78,7 +76,7 @@ class Device:
         """
         s = deviceStr.strip()
         self.ID = s.split()[0]
-        self.name = s.replace("%s  " % self.ID, "")
+        self.name = s.replace(f"{self.ID}  ", "")
         self.subdevices = {}
 
     def report(self):
@@ -96,14 +94,14 @@ class Device:
         subVendorID = spl[0]
         subDeviceID = spl[1]
         subDeviceName = s.split("  ")[-1]
-        devID = "%s:%s" % (subVendorID, subDeviceID)
+        devID = f"{subVendorID}:{subDeviceID}"
         self.subdevices[devID] = SubDevice(
             subVendorID, subDeviceID, subDeviceName)
 
     def find_subid(self, subven, subdev):
         subven = hex(subven)[2:]
         subdev = hex(subdev)[2:]
-        devid = "%s:%s" % (subven, subdev)
+        devid = f"{subven}:{subdev}"
 
         try:
             return self.subdevices[devid]
@@ -177,17 +175,21 @@ class PCIIds:
         try:
             return self.vendors[vid]
         except:
-            return Vendor("%s Unknown Vendor" % (vid))
+            return Vendor(f"{vid} Unknown Vendor")
 
     def findDate(self, content):
-        for l in content:
-            if l.find("Date:") > -1:
-                return l.split()[-2].replace("-", "")
-        return None
+        return next(
+            (
+                l.split()[-2].replace("-", "")
+                for l in content
+                if l.find("Date:") > -1
+            ),
+            None,
+        )
 
     def parse(self):
         if len(self.contents) < 1:
-            print("data/%s-pci.ids not found" % self.date)
+            print(f"data/{self.date}-pci.ids not found")
         else:
             vendorID = ""
             deviceID = ""
@@ -274,9 +276,9 @@ class ReadElf(object):
             vendor = pcidb.find_vendor(i[0])
             device = vendor.find_device(i[1])
             subdev = device.find_subid(i[2], i[3])
-            print("%s (%s) : %s (%s) %s" %
-                  (vendor.name, vendor.ID, device.name,
-                   device.ID, subdev.name))
+            print(
+                f"{vendor.name} ({vendor.ID}) : {device.name} ({device.ID}) {subdev.name}"
+            )
 
     def parse_pmd_info_string(self, mystring):
         global raw_output
@@ -298,7 +300,7 @@ class ReadElf(object):
         print("PMD NAME: " + pmdinfo["name"])
         for i in optional_pmd_info:
             try:
-                print("%s: %s" % (i['tag'], pmdinfo[i['id']]))
+                print(f"{i['tag']}: {pmdinfo[i['id']]}")
             except KeyError:
                 continue
 
@@ -345,11 +347,14 @@ class ReadElf(object):
             dataptr = endptr
 
     def find_librte_eal(self, section):
-        for tag in section.iter_tags():
-            if tag.entry.d_tag == 'DT_NEEDED':
-                if "librte_eal" in tag.needed:
-                    return tag.needed
-        return None
+        return next(
+            (
+                tag.needed
+                for tag in section.iter_tags()
+                if tag.entry.d_tag == 'DT_NEEDED' and "librte_eal" in tag.needed
+            ),
+            None,
+        )
 
     def search_for_autoload_path(self):
         scanelf = self
@@ -364,13 +369,15 @@ class ReadElf(object):
                 if ldlibpath is None:
                     ldlibpath = ""
                 dtr = self.get_dt_runpath(section)
-                library = search_file(eallib,
-                                      dtr + ":" + ldlibpath +
-                                      ":/usr/lib64:/lib64:/usr/lib:/lib")
+                library = search_file(
+                    eallib,
+                    (f"{dtr}:{ldlibpath}" + ":/usr/lib64:/lib64:/usr/lib:/lib"),
+                )
+
                 if library is None:
                     return (None, None)
                 if raw_output is False:
-                    print("Scanning for autoload path in %s" % library)
+                    print(f"Scanning for autoload path in {library}")
                 scanfile = open(library, 'rb')
                 scanelf = ReadElf(scanfile, sys.stdout)
         except AttributeError:
@@ -413,10 +420,14 @@ class ReadElf(object):
         return (None, None)
 
     def get_dt_runpath(self, dynsec):
-        for tag in dynsec.iter_tags():
-            if tag.entry.d_tag == 'DT_RUNPATH':
-                return tag.runpath
-        return ""
+        return next(
+            (
+                tag.runpath
+                for tag in dynsec.iter_tags()
+                if tag.entry.d_tag == 'DT_RUNPATH'
+            ),
+            "",
+        )
 
     def process_dt_needed_entries(self):
         """ Look to see if there are any DT_NEEDED entries in the binary
@@ -439,17 +450,22 @@ class ReadElf(object):
             if tag.entry.d_tag == 'DT_NEEDED':
                 rc = tag.needed.find(b"librte_pmd")
                 if (rc != -1):
-                    library = search_file(tag.needed,
-                                          runpath + ":" + ldlibpath +
-                                          ":/usr/lib64:/lib64:/usr/lib:/lib")
+                    library = search_file(
+                        tag.needed,
+                        (
+                            f"{runpath}:{ldlibpath}"
+                            + ":/usr/lib64:/lib64:/usr/lib:/lib"
+                        ),
+                    )
+
                     if library is not None:
                         if raw_output is False:
-                            print("Scanning %s for pmd information" % library)
+                            print(f"Scanning {library} for pmd information")
                         with open(library, 'rb') as file:
                             try:
                                 libelf = ReadElf(file, sys.stdout)
                             except ELFError:
-                                print("%s is no an ELF file" % library)
+                                print(f"{library} is no an ELF file")
                                 continue
                             libelf.process_dt_needed_entries()
                             libelf.display_pmd_info_strings(".rodata")
@@ -484,7 +500,7 @@ def scan_autoload_path(autoload_path):
                 continue
 
             if raw_output is False:
-                print("Hw Support for library %s" % d)
+                print(f"Hw Support for library {d}")
             readelf.display_pmd_info_strings(".rodata")
             file.close()
 
@@ -501,25 +517,24 @@ def scan_for_autoload_pmds(dpdk_path):
             print("Must specify a file name")
         return
 
-    file = open(dpdk_path, 'rb')
-    try:
-        readelf = ReadElf(file, sys.stdout)
-    except ElfError:
-        if raw_output is False:
-            print("Unable to parse %s" % file)
-        return
+    with open(dpdk_path, 'rb') as file:
+        try:
+            readelf = ReadElf(file, sys.stdout)
+        except ElfError:
+            if raw_output is False:
+                print(f"Unable to parse {file}")
+            return
 
-    (autoload_path, scannedfile) = readelf.search_for_autoload_path()
-    if (autoload_path is None or autoload_path is ""):
+        (autoload_path, scannedfile) = readelf.search_for_autoload_path()
+        if (autoload_path is None or autoload_path is ""):
+            if (raw_output is False):
+                print(f"No autoload path configured in {dpdk_path}")
+            return
         if (raw_output is False):
-            print("No autoload path configured in %s" % dpdk_path)
-        return
-    if (raw_output is False):
-        if (scannedfile is None):
-            scannedfile = dpdk_path
-        print("Found autoload path %s in %s" % (autoload_path, scannedfile))
+            if (scannedfile is None):
+                scannedfile = dpdk_path
+            print(f"Found autoload path {autoload_path} in {scannedfile}")
 
-    file.close()
     if (raw_output is False):
         print("Discovered Autoload HW Support:")
     scan_autoload_path(autoload_path)
@@ -587,7 +602,9 @@ def main(stream=None):
         myelffile = args[0]
     else:
         myelffile = search_file(
-            args[0], ldlibpath + ":/usr/lib64:/lib64:/usr/lib:/lib")
+            args[0], f"{ldlibpath}:/usr/lib64:/lib64:/usr/lib:/lib"
+        )
+
 
     if (myelffile is None):
         print("File not found")

@@ -39,10 +39,8 @@ sockets = []
 cores = []
 core_map = {}
 
-fd = open("/proc/cpuinfo")
-lines = fd.readlines()
-fd.close()
-
+with open("/proc/cpuinfo") as fd:
+    lines = fd.readlines()
 core_details = []
 core_lines = {}
 for line in lines:
@@ -82,17 +80,17 @@ max_core_id_len = len(str(max(cores)))
 
 output = " ".ljust(max_core_id_len + len('Core '))
 for s in sockets:
-    output += " Socket %s" % str(s).ljust(max_core_map_len - len('Socket '))
+    output += f" Socket {str(s).ljust(max_core_map_len - len('Socket '))}"
 print(output)
 
 output = " ".ljust(max_core_id_len + len('Core '))
-for s in sockets:
+for _ in sockets:
     output += " --------".ljust(max_core_map_len)
     output += " "
 print(output)
 
 for c in cores:
-    output = "Core %s" % str(c).ljust(max_core_id_len)
+    output = f"Core {str(c).ljust(max_core_id_len)}"
     for s in sockets:
-        output += " " + str(core_map[(s, c)]).ljust(max_core_map_len)
+        output += f" {str(core_map[(s, c)]).ljust(max_core_map_len)}"
     print(output)

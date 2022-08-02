@@ -132,10 +132,10 @@ def numref_role(reftype, rawtext, text, lineno, inliner):
     isn't available.
     """
     # Add an identifier to distinguish numref from other references.
-    newnode = nodes.reference('',
-                              '',
-                              refuri='_local_numref_#%s' % text,
-                              internal=True)
+    newnode = nodes.reference(
+        '', '', refuri=f'_local_numref_#{text}', internal=True
+    )
+
     return [newnode], []
 
 
@@ -168,10 +168,10 @@ def process_numref(app, doctree, from_docname):
                 caption = 'Link'
 
             # New reference node with the updated link information.
-            newnode = nodes.reference('',
-                                      caption,
-                                      refuri='%s#%s' % (relative_url, label),
-                                      internal=True)
+            newnode = nodes.reference(
+                '', caption, refuri=f'{relative_url}#{label}', internal=True
+            )
+
             node.replace_self(newnode)
 
 
@@ -235,17 +235,13 @@ def generate_nic_overview_table(output_filename):
 
         # Check for a valid ini section.
         if not config.has_section(default_section):
-            print("{}: File '{}' has no [{}] secton".format(warning,
-                                                            ini_filename,
-                                                            default_section))
+            print(f"{warning}: File '{ini_filename}' has no [{default_section}] secton")
             continue
 
         # Check for valid features names.
         for name, value in config.items(default_section):
             if name not in valid_features:
-                print("{}: Unknown feature '{}' in '{}'".format(warning,
-                                                                name,
-                                                                ini_filename))
+                print(f"{warning}: Unknown feature '{name}' in '{ini_filename}'")
                 continue
 
             if value is not '':
@@ -267,17 +263,11 @@ def print_table_header(outfile, num_cols, header_names):
     """ Print the RST table header. The header names are vertical. """
     print_table_divider(outfile, num_cols)
 
-    line = ''
-    for name in header_names:
-        line += ' ' + name[0]
-
+    line = ''.join(f' {name[0]}' for name in header_names)
     print_table_row(outfile, 'Feature', line)
 
     for i in range(1, 10):
-        line = ''
-        for name in header_names:
-            line += ' ' + name[i]
-
+        line = ''.join(f' {name[i]}' for name in header_names)
         print_table_row(outfile, '', line)
 
     print_table_divider(outfile, num_cols)
@@ -287,10 +277,10 @@ def print_table_body(outfile, num_cols, ini_files, ini_data, default_features):
     """ Print out the body of the table. Each row is a NIC feature. """
 
     for feature, _ in default_features:
-        line = ''
+        line = ''.join(
+            f' {ini_data[ini_filename][feature]}' for ini_filename in ini_files
+        )
 
-        for ini_filename in ini_files:
-            line += ' ' + ini_data[ini_filename][feature]
 
         print_table_row(outfile, feature, line)
 
@@ -305,17 +295,15 @@ def print_table_row(outfile, feature, line):
 
 def print_table_divider(outfile, num_cols):
     """ Print the table divider line. """
-    line = ' '
     column_dividers = ['='] * num_cols
-    line += ' '.join(column_dividers)
-
+    line = ' ' + ' '.join(column_dividers)
     feature = '=' * 20
 
     print_table_row(outfile, feature, line)
 
 
 def setup(app):
-    table_file = dirname(__file__) + '/nics/overview_table.txt'
+    table_file = f'{dirname(__file__)}/nics/overview_table.txt'
     generate_nic_overview_table(table_file)
 
     if LooseVersion(sphinx_version) < LooseVersion('1.3.1'):

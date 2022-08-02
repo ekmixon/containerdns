@@ -246,8 +246,7 @@ def timer_autotest(child, test_name):
             if cnt > 21:
                 return -1, "Fail [tim0 cnt > 21]"
 
-        # timer1 each time expires on a different core
-        if id == 1:
+        elif id == 1:
             if lcore == lcore_tim1:
                 return -1, "Fail [lcore == lcore_tim1 (%d, %d)]" \
                     % (lcore, lcore_tim1)
@@ -255,8 +254,7 @@ def timer_autotest(child, test_name):
             if cnt > 10:
                 return -1, "Fail [tim1 cnt > 30]"
 
-        # timer0 always expires on the same core
-        if id == 2:
+        elif id == 2:
             if lcore_tim2 == -1:
                 lcore_tim2 = lcore
             elif lcore != lcore_tim2:
@@ -265,8 +263,7 @@ def timer_autotest(child, test_name):
             if cnt > 30:
                 return -1, "Fail [tim2 cnt > 30]"
 
-        # timer0 always expires on the same core
-        if id == 3:
+        elif id == 3:
             if lcore_tim3 == -1:
                 lcore_tim3 = lcore
             elif lcore != lcore_tim3:
@@ -296,7 +293,4 @@ def ring_autotest(child, test_name):
     child.sendline("dump_ring test")
     index = child.expect(["  watermark=100",
                           pexpect.TIMEOUT], timeout=1)
-    if index != 0:
-        return -1, "Fail [Bad watermark]"
-
-    return 0, "Success"
+    return (-1, "Fail [Bad watermark]") if index != 0 else (0, "Success")

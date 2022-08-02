@@ -85,8 +85,7 @@ def bitstring_write(n, n_bits):
 
     i = n_bits - 1
     while (i >= 0):
-        cond = (n & (1 << i))
-        if (cond):
+        if cond := (n & (1 << i)):
             print('1', end='')
             tmpstr += '1'
         else:
@@ -123,7 +122,7 @@ class Cores2:
 class Context0:
 
     def __init__(self):
-        self.cores = [Cores0() for i in range(0, constants.MAX_CORES)]
+        self.cores = [Cores0() for _ in range(constants.MAX_CORES)]
         self.n_cores = 0
         self.n_pipelines = 0
         self.n_pipelines0 = 0
@@ -135,14 +134,14 @@ class Context0:
     def stage0_print(self):
         print('printing Context0 obj')
         print('c0.cores(n_pipelines) = [ ', end='')
-        for cores_count in range(0, constants.MAX_CORES):
+        for cores_count in range(constants.MAX_CORES):
             print(self.cores[cores_count].n_pipelines, end=' ')
         print(']')
         print('c0.n_cores = %d' % self.n_cores)
         print('c0.n_pipelines = %d' % self.n_pipelines)
         print('c0.n_pipelines0 = %d' % self.n_pipelines0)
         print('c0.pos = %d' % self.pos)
-        print('c0.file_comment = %s' % self.file_comment)
+        print(f'c0.file_comment = {self.file_comment}')
         if (self.ctx1 is not None):
             print('c0.ctx1 = ', end='')
             print(repr(self.ctx1))
@@ -169,16 +168,12 @@ class Context0:
 
         while True:
             # go forward
-            while True:
-                if ((self.pos < self.n_cores) and (self.n_pipelines0 > 0)):
-                    self.cores[self.pos].n_pipelines = min(
-                        self.cores[self.pos - 1].n_pipelines,
-                        self.n_pipelines0)
-                    self.n_pipelines0 -= self.cores[self.pos].n_pipelines
-                    self.pos += 1
-                else:
-                    break
-
+            while not (self.pos >= self.n_cores or self.n_pipelines0 <= 0):
+                self.cores[self.pos].n_pipelines = min(
+                    self.cores[self.pos - 1].n_pipelines,
+                    self.n_pipelines0)
+                self.n_pipelines0 -= self.cores[self.pos].n_pipelines
+                self.pos += 1
             # check solution
             if (self.n_pipelines0 == 0):
                 self.stage0_log()
@@ -204,18 +199,16 @@ class Context0:
             self.pos += 1
 
     def stage0_log(self):
-        tmp_file_comment = ""
         if(enable_stage0_traceout != 1):
             return
 
         print('STAGE0: ', end='')
-        tmp_file_comment += 'STAGE0: '
-        for cores_count in range(0, self.n_cores):
+        tmp_file_comment = "" + 'STAGE0: '
+        for cores_count in range(self.n_cores):
             print('C%d = %d\t'
                   % (cores_count,
                       self.cores[cores_count].n_pipelines), end='')
-            tmp_file_comment += "C{} = {}\t".format(
-                cores_count, self.cores[cores_count].n_pipelines)
+            tmp_file_comment += f"C{cores_count} = {self.cores[cores_count].n_pipelines}\t"
         # end for
         print('')
         self.ctx1.stage0_file_comment = tmp_file_comment
@@ -226,7 +219,7 @@ class Context1:
     _fileTrace = None
 
     def __init__(self):
-        self.cores = [Cores1() for i in range(constants.MAX_CORES)]
+        self.cores = [Cores1() for _ in range(constants.MAX_CORES)]
         self.n_cores = 0
         self.n_pipelines = 0
         self.pos = 0
@@ -251,15 +244,15 @@ class Context1:
     def stage1_print(self):
         print('printing Context1 obj')
         print('ctx1.cores(pipelines,n_pipelines) = [ ', end='')
-        for cores_count in range(0, constants.MAX_CORES):
+        for cores_count in range(constants.MAX_CORES):
             print('(%d,%d)' % (self.cores[cores_count].pipelines,
                                self.cores[cores_count].n_pipelines), end=' ')
         print(']')
         print('ctx1.n_cores = %d' % self.n_cores)
         print('ctx1.n_pipelines = %d' % self.n_pipelines)
         print('ctx1.pos = %d' % self.pos)
-        print('ctx1.stage0_file_comment = %s' % self.stage0_file_comment)
-        print('ctx1.stage1_file_comment = %s' % self.stage1_file_comment)
+        print(f'ctx1.stage0_file_comment = {self.stage0_file_comment}')
+        print(f'ctx1.stage1_file_comment = {self.stage1_file_comment}')
         if (self.ctx2 is not None):
             print('ctx1.ctx2 = ', end='')
             print(self.ctx2)
@@ -277,10 +270,8 @@ class Context1:
 
         self.arr_pipelines2cores = [0] * self.n_pipelines
 
-        i = 0
-        while (i < self.n_cores):
+        for i in range(self.n_cores):
             self.cores[i].n_pipelines = c0.cores[i].n_pipelines
-            i += 1
 
     def stage1_process(self):
         pipelines_max = len2mask(self.n_pipelines)
@@ -336,18 +327,17 @@ class Context1:
 
     def stage1_log(self):
         tmp_file_comment = ""
-        if(enable_stage1_traceout == 1):
+        if (enable_stage1_traceout == 1):
             print('STAGE1: ', end='')
             tmp_file_comment += 'STAGE1: '
             i = 0
             while (i < self.n_cores):
                 print('C%d = [' % i, end='')
-                tmp_file_comment += "C{} = [".format(i)
+                tmp_file_comment += f"C{i} = ["
 
                 j = self.n_pipelines - 1
                 while (j >= 0):
-                    cond = ((self.cores[i].pipelines) & (1 << j))
-                    if (cond):
+                    if cond := ((self.cores[i].pipelines) & (1 << j)):
                         print('1', end='')
                         tmp_file_comment += '1'
                     else:
@@ -373,23 +363,21 @@ class Context1:
     def stage1_updateCoresInBuf(self, nPipeline, sCore):
         rePipeline = self._fileTrace.arr_pipelines[nPipeline]
         rePipeline = rePipeline.replace("[", "\[").replace("]", "\]")
-        reCore = 'core\s*=\s*((\d*)|(((s|S)\d)?(c|C)[1-9][0-9]*)).*\n'
-        sSubs = 'core = ' + sCore + '\n'
+        sSubs = f'core = {sCore}' + '\n'
 
         reg_pipeline = re.compile(rePipeline)
-        search_match = reg_pipeline.search(self._fileTrace.in_buf)
-
-        if(search_match):
+        if search_match := reg_pipeline.search(self._fileTrace.in_buf):
             pos = search_match.start()
             substr1 = self._fileTrace.in_buf[:pos]
             substr2 = self._fileTrace.in_buf[pos:]
+            reCore = 'core\s*=\s*((\d*)|(((s|S)\d)?(c|C)[1-9][0-9]*)).*\n'
             substr2 = re.sub(reCore, sSubs, substr2, 1)
             self._fileTrace.in_buf = substr1 + substr2
 
     def stage1_process_file(self):
         outFileName = os.path.join(self._fileTrace.out_path,
                                    self._fileTrace.prefix_outfile)
-        outFileName += "_{}CoReS".format(self.n_cores)
+        outFileName += f"_{self.n_cores}CoReS"
 
         i = 0  # represents core number
         while (i < self.n_cores):
@@ -410,51 +398,39 @@ class Context1:
 
         # update the in_buf as per the arr_pipelines2cores
         for pipeline_idx in range(len(self.arr_pipelines2cores)):
-            outFileName += "_{}".format(self.arr_pipelines2cores[pipeline_idx])
+            outFileName += f"_{self.arr_pipelines2cores[pipeline_idx]}"
             self.stage1_updateCoresInBuf(
                 pipeline_idx, self.arr_pipelines2cores[pipeline_idx])
 
         # by now the in_buf is all set to be written to file
         outFileName += self._fileTrace.suffix_outfile
-        outputFile = open(outFileName, "w")
+        with open(outFileName, "w") as outputFile:
+            # write out the comments
+            strTruncated = ("", "(Truncated)")[self._fileTrace.ncores_truncated]
+            outputFile.write(
+                f"; =============== Pipeline-to-Core Mapping ================\n; Generated from file {self._fileTrace.in_file_namepath}\n; Input pipelines = {fileTrace.arr_pipelines}\n; Input cores = {fileTrace.in_physical_cores}\n; N_PIPELINES = {self._fileTrace.n_pipelines} N_CORES = {self._fileTrace.n_cores} {strTruncated} hyper_thread = {self._fileTrace.hyper_thread}\n"
+            )
 
-        # write out the comments
-        strTruncated = ("", "(Truncated)")[self._fileTrace.ncores_truncated]
-        outputFile.write(
-            "; =============== Pipeline-to-Core Mapping ================\n"
-            "; Generated from file {}\n"
-            "; Input pipelines = {}\n"
-            "; Input cores = {}\n"
-            "; N_PIPELINES = {} N_CORES = {} {} hyper_thread = {}\n"
-            .format(
-                self._fileTrace.in_file_namepath,
-                fileTrace.arr_pipelines,
-                fileTrace.in_physical_cores,
-                self._fileTrace.n_pipelines,
-                self._fileTrace.n_cores,
-                strTruncated,
-                self._fileTrace.hyper_thread))
 
-        outputFile.write(
-            "; {stg0cmt}\n"
-            "; {stg1cmt}\n"
-            "; ========================================================\n"
-            "; \n"
-            .format(
-                stg0cmt=self.stage0_file_comment,
-                stg1cmt=self.stage1_file_comment))
+            outputFile.write(
+                "; {stg0cmt}\n"
+                "; {stg1cmt}\n"
+                "; ========================================================\n"
+                "; \n"
+                .format(
+                    stg0cmt=self.stage0_file_comment,
+                    stg1cmt=self.stage1_file_comment))
 
-        # write buffer contents
-        outputFile.write(self._fileTrace.in_buf)
-        outputFile.flush()
-        outputFile.close()
+            # write buffer contents
+            outputFile.write(self._fileTrace.in_buf)
+            outputFile.flush()
 
 
 class Context2:
     _fileTrace = None
 
     def __init__(self):
-        self.cores = [Cores2() for i in range(constants.MAX_CORES)]
+        self.cores = [Cores2() for _ in range(constants.MAX_CORES)]
         self.n_cores = 0
         self.n_pipelines = 0
         self.pos = 0
@@ -469,7 +445,7 @@ class Context2:
     def stage2_print(self):
         print('printing Context2 obj')
         print('ctx2.cores(pipelines, n_pipelines, counter, counter_max) =')
-        for cores_count in range(0, constants.MAX_CORES):
+        for cores_count in range(constants.MAX_CORES):
             print('core[%d] = (%d,%d,%d,%d)' % (
                 cores_count,
                 self.cores[cores_count].pipelines,
@@ -480,21 +456,18 @@ class Context2:
             print('ctx2.n_cores = %d' % self.n_cores, end='')
             print('ctx2.n_pipelines = %d' % self.n_pipelines, end='')
             print('ctx2.pos = %d' % self.pos)
-            print('ctx2.stage0_file_comment = %s' %
-                  self.self.stage0_file_comment)
-            print('ctx2.stage1_file_comment = %s' %
-                  self.self.stage1_file_comment)
-            print('ctx2.stage2_file_comment = %s' %
-                  self.self.stage2_file_comment)
+            print(f'ctx2.stage0_file_comment = {self.self.stage0_file_comment}')
+            print(f'ctx2.stage1_file_comment = {self.self.stage1_file_comment}')
+            print(f'ctx2.stage2_file_comment = {self.self.stage2_file_comment}')
 
     def stage2_reset(self):
-        for i in range(0, constants.MAX_CORES):
+        for i in range(constants.MAX_CORES):
             self.cores[i].pipelines = 0
             self.cores[i].n_pipelines = 0
             self.cores[i].counter = 0
             self.cores[i].counter_max = 0
 
-            for idx in range(0, constants.MAX_PIPELINES):
+            for idx in range(constants.MAX_PIPELINES):
                 self.cores[i].bitpos[idx] = 0
 
         self.n_cores = 0
@@ -515,7 +488,7 @@ class Context2:
 
     def bitpos_apply(self, in_buf, pos, n_pos):
         out = 0
-        for i in range(0, n_pos):
+        for i in range(n_pos):
             out |= (in_buf & (1 << i)) << (pos[i] - i)
 
         return out
@@ -536,11 +509,11 @@ class Context2:
 
     def stage2_log(self):
         tmp_file_comment = ""
-        if(enable_stage2_traceout == 1):
+        if (enable_stage2_traceout == 1):
             print('STAGE2: ', end='')
             tmp_file_comment += 'STAGE2: '
 
-            for i in range(0, self.n_cores):
+            for i in range(self.n_cores):
                 mask = len2mask(self.cores[i].n_pipelines)
                 pipelines_ht0 = self.bitpos_apply(
                     (~self.cores[i].counter) & mask,
@@ -553,12 +526,12 @@ class Context2:
                     self.cores[i].n_pipelines)
 
                 print('C%dHT0 = [' % i, end='')
-                tmp_file_comment += "C{}HT0 = [".format(i)
+                tmp_file_comment += f"C{i}HT0 = ["
                 tmp_file_comment += bitstring_write(
                     pipelines_ht0, self.n_pipelines)
 
                 print(']\tC%dHT1 = [' % i, end='')
-                tmp_file_comment += "]\tC{}HT1 = [".format(i)
+                tmp_file_comment += f"]\tC{i}HT1 = ["
                 tmp_file_comment += bitstring_write(
                     pipelines_ht1, self.n_pipelines)
                 print(']\t', end='')
@@ -576,16 +549,14 @@ class Context2:
     def stage2_updateCoresInBuf(self, nPipeline, sCore):
         rePipeline = self._fileTrace.arr_pipelines[nPipeline]
         rePipeline = rePipeline.replace("[", "\[").replace("]", "\]")
-        reCore = 'core\s*=\s*((\d*)|(((s|S)\d)?(c|C)[1-9][0-9]*)).*\n'
-        sSubs = 'core = ' + sCore + '\n'
+        sSubs = f'core = {sCore}' + '\n'
 
         reg_pipeline = re.compile(rePipeline)
-        search_match = reg_pipeline.search(self._fileTrace.in_buf)
-
-        if(search_match):
+        if search_match := reg_pipeline.search(self._fileTrace.in_buf):
             pos = search_match.start()
             substr1 = self._fileTrace.in_buf[:pos]
             substr2 = self._fileTrace.in_buf[pos:]
+            reCore = 'core\s*=\s*((\d*)|(((s|S)\d)?(c|C)[1-9][0-9]*)).*\n'
             substr2 = re.sub(reCore, sSubs, substr2, 1)
             self._fileTrace.in_buf = substr1 + substr2
 
@@ -596,17 +567,16 @@ class Context2:
         i = n_bits - 1
         pipeline_idx = 0
         while (i >= 0):
-            cond = (n & (1 << i))
-            if (cond):
+            if cond := (n & (1 << i)):
                 # update the pipelines array to match the core
                 # only in case of cond match
                 # PIPELINE0 and core 0 are reserved
-                if(bHT):
-                    tmpCore = fileTrace.in_physical_cores[nCore] + 'h'
+                if bHT:
+                    tmpCore = f'{fileTrace.in_physical_cores[nCore]}h'
                     self.arr2_pipelines2cores[pipeline_idx] = tmpCore
                 else:
                     self.arr2_pipelines2cores[pipeline_idx] = \
-                        fileTrace.in_physical_cores[nCore]
+                            fileTrace.in_physical_cores[nCore]
 
             i -= 1
             pipeline_idx += 1
@@ -614,9 +584,9 @@ class Context2:
     def stage2_process_file(self):
         outFileName = os.path.join(self._fileTrace.out_path,
                                    self._fileTrace.prefix_outfile)
-        outFileName += "_{}CoReS".format(self.n_cores)
+        outFileName += f"_{self.n_cores}CoReS"
 
-        for i in range(0, self.n_cores):
+        for i in range(self.n_cores):
             mask = len2mask(self.cores[i].n_pipelines)
             pipelines_ht0 = self.bitpos_apply((~self.cores[i].counter) & mask,
                                               self.cores[i].bitpos,
@@ -632,47 +602,34 @@ class Context2:
 
         # update the in_buf as per the arr_pipelines2cores
         for pipeline_idx in range(len(self.arr2_pipelines2cores)):
-            outFileName += "_{}".format(
-                self.arr2_pipelines2cores[pipeline_idx])
+            outFileName += f"_{self.arr2_pipelines2cores[pipeline_idx]}"
             self.stage2_updateCoresInBuf(
                 pipeline_idx, self.arr2_pipelines2cores[pipeline_idx])
 
         # by now the in_buf is all set to be written to file
         outFileName += self._fileTrace.suffix_outfile
-        outputFile = open(outFileName, "w")
+        with open(outFileName, "w") as outputFile:
+            # write the file comments
+            strTruncated = ("", "(Truncated)")[self._fileTrace.ncores_truncated]
+            outputFile.write(
+                f"; =============== Pipeline-to-Core Mapping ================\n; Generated from file {self._fileTrace.in_file_namepath}\n; Input pipelines = {fileTrace.arr_pipelines}\n; Input cores = {fileTrace.in_physical_cores}\n; N_PIPELINES = {self._fileTrace.n_pipelines}  N_CORES = {self._fileTrace.n_cores} {strTruncated} hyper_thread = {self._fileTrace.hyper_thread} \n"
+            )
 
-        # write the file comments
-        strTruncated = ("", "(Truncated)")[self._fileTrace.ncores_truncated]
-        outputFile.write(
-            "; =============== Pipeline-to-Core Mapping ================\n"
-            "; Generated from file {}\n"
-            "; Input pipelines = {}\n"
-            "; Input cores = {}\n"
-            "; N_PIPELINES = {}  N_CORES = {} {} hyper_thread = {} \n"
-            .format(
-                self._fileTrace.in_file_namepath,
-                fileTrace.arr_pipelines,
-                fileTrace.in_physical_cores,
-                self._fileTrace.n_pipelines,
-                self._fileTrace.n_cores,
-                strTruncated,
-                self._fileTrace.hyper_thread))
 
-        outputFile.write(
-            "; {stg0cmt}\n"
-            "; {stg1cmt}\n"
-            "; {stg2cmt}\n"
-            "; ========================================================\n"
-            "; \n"
-            .format(
-                stg0cmt=self.stage0_file_comment,
-                stg1cmt=self.stage1_file_comment,
-                stg2cmt=self.stage2_file_comment))
+            outputFile.write(
+                "; {stg0cmt}\n"
+                "; {stg1cmt}\n"
+                "; {stg2cmt}\n"
+                "; ========================================================\n"
+                "; \n"
+                .format(
+                    stg0cmt=self.stage0_file_comment,
+                    stg1cmt=self.stage1_file_comment,
+                    stg2cmt=self.stage2_file_comment))
 
-        # write the buffer contents
-        outputFile.write(self._fileTrace.in_buf)
-        outputFile.flush()
-        outputFile.close()
+            # write the buffer contents
+            outputFile.write(self._fileTrace.in_buf)
+            outputFile.flush()
 
     def stage2_process(self):
         i = 0
@@ -720,9 +677,7 @@ class FileTrace:
         try:
             os.makedirs(self.out_path)
         except OSError as excep:
-            if excep.errno == errno.EEXIST and os.path.isdir(self.out_path):
-                pass
-            else:
+            if excep.errno != errno.EEXIST or not os.path.isdir(self.out_path):
                 raise
 
         self.in_buf = None
@@ -770,8 +725,7 @@ def process(n_cores, n_pipelines, fileTrace):
     fileTrace.n_cores = n_cores
 
     strTruncated = ("", "(Truncated)")[fileTrace.ncores_truncated]
-    print("N_PIPELINES = {}, N_CORES = {} {}"
-          .format(n_pipelines, n_cores, strTruncated))
+    print(f"N_PIPELINES = {n_pipelines}, N_CORES = {n_cores} {strTruncated}")
     print("---------------------------------------------------------------")
 
     ctx0_inst = Context0()
@@ -787,11 +741,7 @@ def process(n_cores, n_pipelines, fileTrace):
 
 
 def validate_core(core):
-    match = reg_phycore.match(core)
-    if(match):
-        return True
-    else:
-        return False
+    return bool(match := reg_phycore.match(core))
 
 
 def validate_phycores(phy_cores):
@@ -813,42 +763,39 @@ def validate_phycores(phy_cores):
 
 def scanconfigfile(fileTrace):
     '''scan input file for pipelines, validate then process.'''
-    # open file
-    filetoscan = open(fileTrace.in_file_namepath, 'r')
-    fileTrace.in_buf = filetoscan.read()
+    with open(fileTrace.in_file_namepath, 'r') as filetoscan:
+        fileTrace.in_buf = filetoscan.read()
 
-    # reset iterator on open file
-    filetoscan.seek(0)
+        # reset iterator on open file
+        filetoscan.seek(0)
 
-    # scan input file for pipelines
-    # master pipelines to be ignored
-    pattern_pipeline = r'\[PIPELINE\d*\]'
-    pattern_mastertype = r'type\s*=\s*MASTER'
+        # scan input file for pipelines
+        # master pipelines to be ignored
+        pattern_pipeline = r'\[PIPELINE\d*\]'
+        pattern_mastertype = r'type\s*=\s*MASTER'
 
-    pending_pipeline = False
-    for line in filetoscan:
-        match_pipeline = re.search(pattern_pipeline, line)
-        match_type = re.search('type\s*=', line)
-        match_mastertype = re.search(pattern_mastertype, line)
+        pending_pipeline = False
+        for line in filetoscan:
+            match_pipeline = re.search(pattern_pipeline, line)
+            match_type = re.search('type\s*=', line)
+            match_mastertype = re.search(pattern_mastertype, line)
 
-        if(match_pipeline):
-            sPipeline = line[match_pipeline.start():match_pipeline.end()]
-            pending_pipeline = True
-        elif(match_type):
-            # found a type definition...
-            if(match_mastertype is None):
-                # and this is not a master pipeline...
-                if(pending_pipeline):
-                    # add it to the list of pipelines to be mapped
-                    fileTrace.arr_pipelines.append(sPipeline)
+            if(match_pipeline):
+                sPipeline = line[match_pipeline.start():match_pipeline.end()]
+                pending_pipeline = True
+            elif(match_type):
+                # found a type definition...
+                if(match_mastertype is None):
+                    # and this is not a master pipeline...
+                    if(pending_pipeline):
+                        # add it to the list of pipelines to be mapped
+                        fileTrace.arr_pipelines.append(sPipeline)
+                        pending_pipeline = False
+                else:
+                    # and this is a master pipeline...
+                    # ignore the current and move on to next
+                    sPipeline = ""
                     pending_pipeline = False
-            else:
-                # and this is a master pipeline...
-                # ignore the current and move on to next
-                sPipeline = ""
-                pending_pipeline = False
-    filetoscan.close()
-
     # validate if pipelines are unique
     if(len(fileTrace.arr_pipelines) != len(set(fileTrace.arr_pipelines))):
         sys.exit('Error: duplicate pipelines in input file')
@@ -857,8 +804,10 @@ def scanconfigfile(fileTrace):
     num_cores = len(fileTrace.in_physical_cores)
 
     print("-------------------Pipeline-to-core mapping--------------------")
-    print("Input pipelines = {}\nInput cores = {}"
-          .format(fileTrace.arr_pipelines, fileTrace.in_physical_cores))
+    print(
+        f"Input pipelines = {fileTrace.arr_pipelines}\nInput cores = {fileTrace.in_physical_cores}"
+    )
+
 
     # input configuration file validations goes here
     if (num_cores > fileTrace.max_cores):

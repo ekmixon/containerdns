@@ -61,7 +61,7 @@ if len(sys.argv) > 3:
     else:
         test_whitelist = testlist
 
-cmdline = "%s -c f -n 4" % (sys.argv[1])
+cmdline = f"{sys.argv[1]} -c f -n 4"
 
 print(cmdline)
 

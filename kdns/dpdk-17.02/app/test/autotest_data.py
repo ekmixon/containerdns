@@ -38,9 +38,7 @@ from autotest_test_funcs import *
 # quick and dirty function to find out number of sockets
 def num_sockets():
     result = len(glob("/sys/devices/system/node/node*"))
-    if result == 0:
-        return 1
-    return result
+    return 1 if result == 0 else result
 
 
 # Assign given number to each socket

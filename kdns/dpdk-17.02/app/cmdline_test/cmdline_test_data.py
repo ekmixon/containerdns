@@ -91,220 +91,314 @@ PROMPT = "CMDLINE_TEST>>"
 # and expected output (if any).
 
 tests = [
-    # test basic commands
-    {"Name": "command test 1",
-     "Sequence": "ambiguous first" + ENTER,
-     "Result": CMD1},
-    {"Name": "command test 2",
-     "Sequence": "ambiguous second" + ENTER,
-     "Result": CMD2},
-    {"Name": "command test 3",
-     "Sequence": "ambiguous ambiguous" + ENTER,
-     "Result": AMBIG},
-    {"Name": "command test 4",
-     "Sequence": "ambiguous ambiguous2" + ENTER,
-     "Result": AMBIG},
-
-    {"Name": "invalid command test 1",
-     "Sequence": "ambiguous invalid" + ENTER,
-     "Result": BAD_ARG},
-    # test invalid commands
-    {"Name": "invalid command test 2",
-     "Sequence": "invalid" + ENTER,
-     "Result": NOT_FOUND},
-    {"Name": "invalid command test 3",
-     "Sequence": "ambiguousinvalid" + ENTER2,
-     "Result": NOT_FOUND},
-
-    # test arrows and deletes
-    {"Name": "arrows & delete test 1",
-     "Sequence": "singlebad" + LEFT*2 + CTRL_B + DEL*3 + ENTER,
-     "Result": SINGLE},
-    {"Name": "arrows & delete test 2",
-     "Sequence": "singlebad" + LEFT*5 + RIGHT + CTRL_F + DEL*3 + ENTER,
-     "Result": SINGLE},
-
-    # test backspace
-    {"Name": "backspace test",
-     "Sequence": "singlebad" + BKSPACE*3 + ENTER,
-     "Result": SINGLE},
-
-    # test goto left and goto right
-    {"Name": "goto left test",
-     "Sequence": "biguous first" + CTRL_A + "am" + ENTER,
-     "Result": CMD1},
-    {"Name": "goto right test",
-     "Sequence": "biguous fir" + CTRL_A + "am" + CTRL_E + "st" + ENTER,
-     "Result": CMD1},
-
-    # test goto words
-    {"Name": "goto left word test",
-     "Sequence": "ambiguous st" + ALT_B + "fir" + ENTER,
-     "Result": CMD1},
-    {"Name": "goto right word test",
-     "Sequence": "ambig first" + CTRL_A + ALT_F + "uous" + ENTER,
-     "Result": CMD1},
-
-    # test removing words
-    {"Name": "remove left word 1",
-     "Sequence": "single invalid" + CTRL_W + ENTER,
-     "Result": SINGLE},
-    {"Name": "remove left word 2",
-     "Sequence": "single invalid" + ALT_BKSPACE + ENTER,
-     "Result": SINGLE},
-    {"Name": "remove right word",
-     "Sequence": "single invalid" + ALT_B + ALT_D + ENTER,
-     "Result": SINGLE},
-
-    # test kill buffer (copy and paste)
-    {"Name": "killbuffer test 1",
-     "Sequence": "ambiguous" + CTRL_A + CTRL_K + " first" + CTRL_A +
-                 CTRL_Y + ENTER,
-     "Result": CMD1},
-    {"Name": "killbuffer test 2",
-     "Sequence": "ambiguous" + CTRL_A + CTRL_K + CTRL_Y*26 + ENTER,
-     "Result": NOT_FOUND},
-
-    # test newline
-    {"Name": "newline test",
-     "Sequence": "invalid" + CTRL_C + "single" + ENTER,
-     "Result": SINGLE},
-
-    # test redisplay (nothing should really happen)
-    {"Name": "redisplay test",
-     "Sequence": "single" + CTRL_L + ENTER,
-     "Result": SINGLE},
-
-    # test autocomplete
-    {"Name": "autocomplete test 1",
-     "Sequence": "si" + TAB + ENTER,
-     "Result": SINGLE},
-    {"Name": "autocomplete test 2",
-     "Sequence": "si" + TAB + "_" + TAB + ENTER,
-     "Result": SINGLE_LONG},
-    {"Name": "autocomplete test 3",
-     "Sequence": "in" + TAB + ENTER,
-     "Result": NOT_FOUND},
-    {"Name": "autocomplete test 4",
-     "Sequence": "am" + TAB + ENTER,
-     "Result": BAD_ARG},
-    {"Name": "autocomplete test 5",
-     "Sequence": "am" + TAB + "fir" + TAB + ENTER,
-     "Result": CMD1},
-    {"Name": "autocomplete test 6",
-     "Sequence": "am" + TAB + "fir" + TAB + TAB + ENTER,
-     "Result": CMD1},
-    {"Name": "autocomplete test 7",
-     "Sequence": "am" + TAB + "fir" + TAB + " " + TAB + ENTER,
-     "Result": CMD1},
-    {"Name": "autocomplete test 8",
-     "Sequence": "am" + TAB + "     am" + TAB + "   " + ENTER,
-     "Result": AMBIG},
-    {"Name": "autocomplete test 9",
-     "Sequence": "am" + TAB + "inv" + TAB + ENTER,
-     "Result": BAD_ARG},
-    {"Name": "autocomplete test 10",
-     "Sequence": "au" + TAB + ENTER,
-     "Result": NOT_FOUND},
-    {"Name": "autocomplete test 11",
-     "Sequence": "au" + TAB + "1" + ENTER,
-     "Result": AUTO1},
-    {"Name": "autocomplete test 12",
-     "Sequence": "au" + TAB + "2" + ENTER,
-     "Result": AUTO2},
-    {"Name": "autocomplete test 13",
-     "Sequence": "au" + TAB + "2" + TAB + ENTER,
-     "Result": AUTO2},
-    {"Name": "autocomplete test 14",
-     "Sequence": "au" + TAB + "2   " + TAB + ENTER,
-     "Result": AUTO2},
-    {"Name": "autocomplete test 15",
-     "Sequence": "24" + TAB + ENTER,
-     "Result": "24"},
-
-    # test history
-    {"Name": "history test 1",
-     "Sequence": "invalid" + ENTER + "single" + ENTER + "invalid" +
-                 ENTER + UP + CTRL_P + ENTER,
-     "Result": SINGLE},
-    {"Name": "history test 2",
-     "Sequence": "invalid" + ENTER + "ambiguous first" + ENTER + "invalid" +
-                 ENTER + "single" + ENTER + UP * 3 + CTRL_N + DOWN + ENTER,
-     "Result": SINGLE},
-
-    #
-    # tests that improve coverage
-    #
-
-    # empty space tests
-    {"Name": "empty space test 1",
-     "Sequence": RIGHT + LEFT + CTRL_B + CTRL_F + ENTER,
-     "Result": PROMPT},
-    {"Name": "empty space test 2",
-     "Sequence": BKSPACE + ENTER,
-     "Result": PROMPT},
-    {"Name": "empty space test 3",
-     "Sequence": CTRL_E*2 + CTRL_A*2 + ENTER,
-     "Result": PROMPT},
-    {"Name": "empty space test 4",
-     "Sequence": ALT_F*2 + ALT_B*2 + ENTER,
-     "Result": PROMPT},
-    {"Name": "empty space test 5",
-     "Sequence": " " + CTRL_E*2 + CTRL_A*2 + ENTER,
-     "Result": PROMPT},
-    {"Name": "empty space test 6",
-     "Sequence": " " + CTRL_A + ALT_F*2 + ALT_B*2 + ENTER,
-     "Result": PROMPT},
-    {"Name": "empty space test 7",
-     "Sequence": "  " + CTRL_A + CTRL_D + CTRL_E + CTRL_D + ENTER,
-     "Result": PROMPT},
-    {"Name": "empty space test 8",
-     "Sequence": " space" + CTRL_W*2 + ENTER,
-     "Result": PROMPT},
-    {"Name": "empty space test 9",
-     "Sequence": " space" + ALT_BKSPACE*2 + ENTER,
-     "Result": PROMPT},
-    {"Name": "empty space test 10",
-     "Sequence": " space " + CTRL_A + ALT_D*3 + ENTER,
-     "Result": PROMPT},
-
-    # non-printable char tests
-    {"Name": "non-printable test 1",
-     "Sequence": chr(27) + chr(47) + ENTER,
-     "Result": PROMPT},
-    {"Name": "non-printable test 2",
-     "Sequence": chr(27) + chr(128) + ENTER*7,
-     "Result": PROMPT},
-    {"Name": "non-printable test 3",
-     "Sequence": chr(27) + chr(91) + chr(127) + ENTER*6,
-     "Result": PROMPT},
-
-    # miscellaneous tests
-    {"Name": "misc test 1",
-     "Sequence": ENTER,
-     "Result": PROMPT},
-    {"Name": "misc test 2",
-     "Sequence": "single #comment" + ENTER,
-     "Result": SINGLE},
-    {"Name": "misc test 3",
-     "Sequence": "#empty line" + ENTER,
-     "Result": PROMPT},
-    {"Name": "misc test 4",
-     "Sequence": "   single  " + ENTER,
-     "Result": SINGLE},
-    {"Name": "misc test 5",
-     "Sequence": "single#" + ENTER,
-     "Result": SINGLE},
-    {"Name": "misc test 6",
-     "Sequence": 'a' * 257 + ENTER,
-     "Result": NOT_FOUND},
-    {"Name": "misc test 7",
-     "Sequence": "clear_history" + UP*5 + DOWN*5 + ENTER,
-     "Result": PROMPT},
-    {"Name": "misc test 8",
-     "Sequence": "a" + HELP + CTRL_C,
-     "Result": PROMPT},
-    {"Name": "misc test 9",
-     "Sequence": CTRL_D*3,
-     "Result": None},
+    {
+        "Name": "command test 1",
+        "Sequence": f"ambiguous first{ENTER}",
+        "Result": CMD1,
+    },
+    {
+        "Name": "command test 2",
+        "Sequence": f"ambiguous second{ENTER}",
+        "Result": CMD2,
+    },
+    {
+        "Name": "command test 3",
+        "Sequence": f"ambiguous ambiguous{ENTER}",
+        "Result": AMBIG,
+    },
+    {
+        "Name": "command test 4",
+        "Sequence": f"ambiguous ambiguous2{ENTER}",
+        "Result": AMBIG,
+    },
+    {
+        "Name": "invalid command test 1",
+        "Sequence": f"ambiguous invalid{ENTER}",
+        "Result": BAD_ARG,
+    },
+    {
+        "Name": "invalid command test 2",
+        "Sequence": f"invalid{ENTER}",
+        "Result": NOT_FOUND,
+    },
+    {
+        "Name": "invalid command test 3",
+        "Sequence": f"ambiguousinvalid{ENTER2}",
+        "Result": NOT_FOUND,
+    },
+    {
+        "Name": "arrows & delete test 1",
+        "Sequence": "singlebad" + LEFT * 2 + CTRL_B + DEL * 3 + ENTER,
+        "Result": SINGLE,
+    },
+    {
+        "Name": "arrows & delete test 2",
+        "Sequence": "singlebad" + LEFT * 5 + RIGHT + CTRL_F + DEL * 3 + ENTER,
+        "Result": SINGLE,
+    },
+    {
+        "Name": "backspace test",
+        "Sequence": "singlebad" + BKSPACE * 3 + ENTER,
+        "Result": SINGLE,
+    },
+    {
+        "Name": "goto left test",
+        "Sequence": f"biguous first{CTRL_A}am{ENTER}",
+        "Result": CMD1,
+    },
+    {
+        "Name": "goto right test",
+        "Sequence": f"biguous fir{CTRL_A}am{CTRL_E}st{ENTER}",
+        "Result": CMD1,
+    },
+    {
+        "Name": "goto left word test",
+        "Sequence": f"ambiguous st{ALT_B}fir{ENTER}",
+        "Result": CMD1,
+    },
+    {
+        "Name": "goto right word test",
+        "Sequence": f"ambig first{CTRL_A}{ALT_F}uous{ENTER}",
+        "Result": CMD1,
+    },
+    {
+        "Name": "remove left word 1",
+        "Sequence": f"single invalid{CTRL_W}{ENTER}",
+        "Result": SINGLE,
+    },
+    {
+        "Name": "remove left word 2",
+        "Sequence": f"single invalid{ALT_BKSPACE}{ENTER}",
+        "Result": SINGLE,
+    },
+    {
+        "Name": "remove right word",
+        "Sequence": f"single invalid{ALT_B}{ALT_D}{ENTER}",
+        "Result": SINGLE,
+    },
+    {
+        "Name": "killbuffer test 1",
+        "Sequence": (
+            (f"ambiguous{CTRL_A}{CTRL_K} first{CTRL_A}" + CTRL_Y) + ENTER
+        ),
+        "Result": CMD1,
+    },
+    {
+        "Name": "killbuffer test 2",
+        "Sequence": f"ambiguous{CTRL_A}{CTRL_K}" + CTRL_Y * 26 + ENTER,
+        "Result": NOT_FOUND,
+    },
+    {
+        "Name": "newline test",
+        "Sequence": f"invalid{CTRL_C}single{ENTER}",
+        "Result": SINGLE,
+    },
+    {
+        "Name": "redisplay test",
+        "Sequence": f"single{CTRL_L}{ENTER}",
+        "Result": SINGLE,
+    },
+    {
+        "Name": "autocomplete test 1",
+        "Sequence": f"si{TAB}{ENTER}",
+        "Result": SINGLE,
+    },
+    {
+        "Name": "autocomplete test 2",
+        "Sequence": f"si{TAB}_{TAB}{ENTER}",
+        "Result": SINGLE_LONG,
+    },
+    {
+        "Name": "autocomplete test 3",
+        "Sequence": f"in{TAB}{ENTER}",
+        "Result": NOT_FOUND,
+    },
+    {
+        "Name": "autocomplete test 4",
+        "Sequence": f"am{TAB}{ENTER}",
+        "Result": BAD_ARG,
+    },
+    {
+        "Name": "autocomplete test 5",
+        "Sequence": f"am{TAB}fir{TAB}{ENTER}",
+        "Result": CMD1,
+    },
+    {
+        "Name": "autocomplete test 6",
+        "Sequence": f"am{TAB}fir{TAB}{TAB}{ENTER}",
+        "Result": CMD1,
+    },
+    {
+        "Name": "autocomplete test 7",
+        "Sequence": f"am{TAB}fir{TAB} {TAB}{ENTER}",
+        "Result": CMD1,
+    },
+    {
+        "Name": "autocomplete test 8",
+        "Sequence": f"am{TAB}     am{TAB}   {ENTER}",
+        "Result": AMBIG,
+    },
+    {
+        "Name": "autocomplete test 9",
+        "Sequence": f"am{TAB}inv{TAB}{ENTER}",
+        "Result": BAD_ARG,
+    },
+    {
+        "Name": "autocomplete test 10",
+        "Sequence": f"au{TAB}{ENTER}",
+        "Result": NOT_FOUND,
+    },
+    {
+        "Name": "autocomplete test 11",
+        "Sequence": f"au{TAB}1{ENTER}",
+        "Result": AUTO1,
+    },
+    {
+        "Name": "autocomplete test 12",
+        "Sequence": f"au{TAB}2{ENTER}",
+        "Result": AUTO2,
+    },
+    {
+        "Name": "autocomplete test 13",
+        "Sequence": f"au{TAB}2{TAB}{ENTER}",
+        "Result": AUTO2,
+    },
+    {
+        "Name": "autocomplete test 14",
+        "Sequence": f"au{TAB}2   {TAB}{ENTER}",
+        "Result": AUTO2,
+    },
+    {
+        "Name": "autocomplete test 15",
+        "Sequence": f"24{TAB}{ENTER}",
+        "Result": "24",
+    },
+    {
+        "Name": "history test 1",
+        "Sequence": (
+            (((f"invalid{ENTER}single{ENTER}invalid" + ENTER) + UP) + CTRL_P)
+            + ENTER
+        ),
+        "Result": SINGLE,
+    },
+    {
+        "Name": "history test 2",
+        "Sequence": (
+            (
+                (
+                    (
+                        (
+                            (
+                                (
+                                    f"invalid{ENTER}ambiguous first{ENTER}invalid"
+                                    + ENTER
+                                )
+                                + "single"
+                            )
+                            + ENTER
+                        )
+                        + UP * 3
+                    )
+                    + CTRL_N
+                )
+                + DOWN
+            )
+            + ENTER
+        ),
+        "Result": SINGLE,
+    },
+    {
+        "Name": "empty space test 1",
+        "Sequence": RIGHT + LEFT + CTRL_B + CTRL_F + ENTER,
+        "Result": PROMPT,
+    },
+    {
+        "Name": "empty space test 2",
+        "Sequence": BKSPACE + ENTER,
+        "Result": PROMPT,
+    },
+    {
+        "Name": "empty space test 3",
+        "Sequence": CTRL_E * 2 + CTRL_A * 2 + ENTER,
+        "Result": PROMPT,
+    },
+    {
+        "Name": "empty space test 4",
+        "Sequence": ALT_F * 2 + ALT_B * 2 + ENTER,
+        "Result": PROMPT,
+    },
+    {
+        "Name": "empty space test 5",
+        "Sequence": " " + CTRL_E * 2 + CTRL_A * 2 + ENTER,
+        "Result": PROMPT,
+    },
+    {
+        "Name": "empty space test 6",
+        "Sequence": " " + CTRL_A + ALT_F * 2 + ALT_B * 2 + ENTER,
+        "Result": PROMPT,
+    },
+    {
+        "Name": "empty space test 7",
+        "Sequence": "  " + CTRL_A + CTRL_D + CTRL_E + CTRL_D + ENTER,
+        "Result": PROMPT,
+    },
+    {
+        "Name": "empty space test 8",
+        "Sequence": " space" + CTRL_W * 2 + ENTER,
+        "Result": PROMPT,
+    },
+    {
+        "Name": "empty space test 9",
+        "Sequence": " space" + ALT_BKSPACE * 2 + ENTER,
+        "Result": PROMPT,
+    },
+    {
+        "Name": "empty space test 10",
+        "Sequence": " space " + CTRL_A + ALT_D * 3 + ENTER,
+        "Result": PROMPT,
+    },
+    {
+        "Name": "non-printable test 1",
+        "Sequence": chr(27) + chr(47) + ENTER,
+        "Result": PROMPT,
+    },
+    {
+        "Name": "non-printable test 2",
+        "Sequence": chr(27) + chr(128) + ENTER * 7,
+        "Result": PROMPT,
+    },
+    {
+        "Name": "non-printable test 3",
+        "Sequence": chr(27) + chr(91) + chr(127) + ENTER * 6,
+        "Result": PROMPT,
+    },
+    {"Name": "misc test 1", "Sequence": ENTER, "Result": PROMPT},
+    {
+        "Name": "misc test 2",
+        "Sequence": "single #comment" + ENTER,
+        "Result": SINGLE,
+    },
+    {
+        "Name": "misc test 3",
+        "Sequence": "#empty line" + ENTER,
+        "Result": PROMPT,
+    },
+    {
+        "Name": "misc test 4",
+        "Sequence": "   single  " + ENTER,
+        "Result": SINGLE,
+    },
+    {"Name": "misc test 5", "Sequence": "single#" + ENTER, "Result": SINGLE},
+    {
+        "Name": "misc test 6",
+        "Sequence": 'a' * 257 + ENTER,
+        "Result": NOT_FOUND,
+    },
+    {
+        "Name": "misc test 7",
+        "Sequence": "clear_history" + UP * 5 + DOWN * 5 + ENTER,
+        "Result": PROMPT,
+    },
+    {"Name": "misc test 8", "Sequence": "a" + HELP + CTRL_C, "Result": PROMPT},
+    {"Name": "misc test 9", "Sequence": CTRL_D * 3, "Result": None},
 ]
